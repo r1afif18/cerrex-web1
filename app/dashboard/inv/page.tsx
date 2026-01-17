@@ -18,6 +18,7 @@ import {
     ArrowRight,
     Search,
     X,
+    Zap,
     Info,
     ChevronDown,
     ChevronUp,
