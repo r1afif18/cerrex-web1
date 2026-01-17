@@ -657,7 +657,7 @@ export default function INVPage() {
                                             <Label className="!text-slate-600">{p.label} %</Label>
                                             <Input
                                                 type="number"
-                                                value={form[p.key as keyof typeof form]}
+                                                value={form[p.key as keyof typeof form] as number}
                                                 onChange={(e: any) => setForm({ ...form, [p.key]: parseFloat(e.target.value) || 0 })}
                                                 className="!bg-white font-mono font-black"
                                             />
