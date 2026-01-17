@@ -2,7 +2,7 @@
 // Premium Glassmorphism Design with Optimized Matrix Operations
 'use client'
 
-import React, { useState, useEffect, useMemo, useCallback, type InputHTMLAttributes, type SelectHTMLAttributes } from 'react'
+import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import { useProject } from '@/lib/context/ProjectContext'
 import { createClient } from '@/lib/supabase/client'
 import {
@@ -166,25 +166,26 @@ const ActionButton = ({ onClick, icon: Icon, color = 'blue', size = 14, disabled
     </button>
 )
 
-const Input = (props: InputHTMLAttributes<HTMLInputElement>) => (
+const Input = (props: React.InputHTMLAttributes<HTMLInputElement>) => (
     <input
         {...props}
         className={`glass-input w-full px-4 py-2.5 text-xs rounded-xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all placeholder:text-slate-400 outline-none font-medium border-slate-200/60 ${props.className || ''}`}
     />
 )
 
-const Select = (props: SelectHTMLAttributes<HTMLSelectElement>) => (
+const Select = (props: React.SelectHTMLAttributes<HTMLSelectElement>) => (
     <select
         {...props}
         className={`glass-input w-full px-4 py-2.5 text-xs rounded-xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all outline-none bg-white font-bold text-slate-700 border-slate-200/60 appearance-none ${props.className || ''}`}
     />
 )
 
-const Label = ({ children }: { children: React.ReactNode }) => (
-    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 ml-1">
+const Label = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => (
+    <label className={`block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 ml-1 ${className}`}>
         {children}
     </label>
 )
+
 
 export default function INVPage() {
     const { currentProject } = useProject()
