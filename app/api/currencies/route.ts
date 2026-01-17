@@ -1,14 +1,18 @@
-// API route for Currencies CRUD operations
+// API route for Currencies CRUD operations - Using Supabase
 
 import { NextRequest, NextResponse } from 'next/server'
-import prisma from '@/lib/prisma'
+import { createClient } from '@/lib/supabase/server'
 
 // GET all currencies
 export async function GET() {
     try {
-        const currencies = await prisma.currency.findMany({
-            orderBy: { code: 'asc' }
-        })
+        const supabase = await createClient()
+        const { data: currencies, error } = await supabase
+            .from('currencies')
+            .select('*')
+            .order('code', { ascending: true })
+
+        if (error) throw error
 
         return NextResponse.json(currencies)
     } catch (error) {
@@ -20,17 +24,22 @@ export async function GET() {
 // POST new currency
 export async function POST(request: NextRequest) {
     try {
+        const supabase = await createClient()
         const body = await request.json()
 
-        const currency = await prisma.currency.create({
-            data: {
+        const { data: currency, error } = await supabase
+            .from('currencies')
+            .insert({
                 code: body.code,
                 name: body.name,
                 symbol: body.symbol,
-                exchangeRateToRef: body.exchangeRateToRef,
-                isReference: body.isReference || false,
-            }
-        })
+                exchange_rate_to_ref: body.exchangeRateToRef,
+                is_reference: body.isReference || false,
+            })
+            .select()
+            .single()
+
+        if (error) throw error
 
         return NextResponse.json(currency, { status: 201 })
     } catch (error) {
@@ -42,18 +51,23 @@ export async function POST(request: NextRequest) {
 // PUT update currency
 export async function PUT(request: NextRequest) {
     try {
+        const supabase = await createClient()
         const body = await request.json()
 
-        const currency = await prisma.currency.update({
-            where: { id: body.id },
-            data: {
+        const { data: currency, error } = await supabase
+            .from('currencies')
+            .update({
                 code: body.code,
                 name: body.name,
                 symbol: body.symbol,
-                exchangeRateToRef: body.exchangeRateToRef,
-                isReference: body.isReference,
-            }
-        })
+                exchange_rate_to_ref: body.exchangeRateToRef,
+                is_reference: body.isReference,
+            })
+            .eq('id', body.id)
+            .select()
+            .single()
+
+        if (error) throw error
 
         return NextResponse.json(currency)
     } catch (error) {
@@ -65,6 +79,7 @@ export async function PUT(request: NextRequest) {
 // DELETE currency
 export async function DELETE(request: NextRequest) {
     try {
+        const supabase = await createClient()
         const { searchParams } = new URL(request.url)
         const id = searchParams.get('id')
 
@@ -72,9 +87,12 @@ export async function DELETE(request: NextRequest) {
             return NextResponse.json({ error: 'Currency ID required' }, { status: 400 })
         }
 
-        await prisma.currency.delete({
-            where: { id }
-        })
+        const { error } = await supabase
+            .from('currencies')
+            .delete()
+            .eq('id', id)
+
+        if (error) throw error
 
         return NextResponse.json({ success: true })
     } catch (error) {
