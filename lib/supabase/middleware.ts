@@ -1,14 +1,23 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
+// Fallback values for build time
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co'
+const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-key'
+
 export async function updateSession(request: NextRequest) {
     let supabaseResponse = NextResponse.next({
         request,
     })
 
+    // Skip Supabase if env vars not set (build time)
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
+        return supabaseResponse
+    }
+
     const supabase = createServerClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        SUPABASE_URL,
+        SUPABASE_ANON_KEY,
         {
             cookies: {
                 getAll() {
@@ -26,12 +35,6 @@ export async function updateSession(request: NextRequest) {
             },
         }
     )
-
-    /* 
-    const {
-        data: { user },
-    } = await supabase.auth.getUser()
-    */
 
     // Check for passcode gate
     const hasPasscode = request.cookies.get('cerrex_passcode')?.value === 'verified'
