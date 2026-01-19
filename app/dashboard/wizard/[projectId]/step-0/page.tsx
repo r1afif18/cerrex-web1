@@ -184,8 +184,9 @@ export default function Step0Page({ params }: Step0PageProps) {
                     onStepClick={handleStepClick}
                 />
 
-                <div className="mb-6">
-                    <p className="text-slate-500">
+                <div className="mb-8">
+                    <h1 className="text-4xl font-black text-slate-900 tracking-tight">Project Context</h1>
+                    <p className="text-slate-500 mt-2 text-lg">
                         Define the basic parameters for your decommissioning cost estimation.
                     </p>
                 </div>
