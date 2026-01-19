@@ -5,11 +5,9 @@ import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { WizardProgress } from '@/app/components/wizard/WizardProgress';
 import { WizardNavigation } from '@/app/components/wizard/WizardNavigation';
-import { ISDCTree } from '@/app/components/wizard';
+import { ISDCTree, ISDCSelection } from '@/app/components/wizard/ISDCTree';
 import { ALL_ISDC_ITEMS } from '@/lib/wizard/isdc-data';
-import {
-    ListTree, AlertCircle, CheckCircle2, Info, Loader2
-} from 'lucide-react';
+import { ListTree, AlertCircle, CheckCircle2, Info, Loader2 } from 'lucide-react';
 
 interface Step1PageProps {
     params: Promise<{ projectId: string }>;
@@ -27,14 +25,9 @@ export default function Step1Page({ params }: Step1PageProps) {
     const [completedSteps, setCompletedSteps] = useState<boolean[]>(Array(10).fill(false));
     const [error, setError] = useState<string | null>(null);
 
-    // State maps ISDC code -> Selection State
-    const [selections, setSelections] = useState<Map<string, {
-        isActive: boolean;
-        contingency: number;
-        description?: string;
-    }>>(new Map());
+    // State maps ISDC code -> Selection State (matching ISDCSelection interface)
+    const [selections, setSelections] = useState<Map<string, ISDCSelection>>(new Map());
 
-    // Initialization
     useEffect(() => {
         loadData();
     }, [projectId]);
@@ -42,7 +35,7 @@ export default function Step1Page({ params }: Step1PageProps) {
     async function loadData() {
         setIsLoading(true);
         try {
-            // 1. Load Session Progress
+            // Load Session Progress
             const { data: session } = await supabase
                 .from('wizard_sessions')
                 .select('*')
@@ -64,19 +57,21 @@ export default function Step1Page({ params }: Step1PageProps) {
                 ]);
             }
 
-            // 2. Load Existing ISDC Selections
+            // Load Existing ISDC Selections
             const { data: existingSelections } = await supabase
                 .from('project_isdc_selection')
                 .select('*')
                 .eq('project_id', projectId);
 
-            const initialMap = new Map();
+            const initialMap = new Map<string, ISDCSelection>();
 
             // Initialize all items as unselected first
             ALL_ISDC_ITEMS.forEach(item => {
                 initialMap.set(item.code, {
+                    code: item.code,
                     isActive: false,
-                    contingency: item.contingencyDefault
+                    isContractor: false,
+                    contingencyPercent: item.contingencyDefault
                 });
             });
 
@@ -84,9 +79,10 @@ export default function Step1Page({ params }: Step1PageProps) {
             if (existingSelections) {
                 existingSelections.forEach((sel: any) => {
                     initialMap.set(sel.isdc_code, {
-                        isActive: true, // Only saved items are active
-                        contingency: sel.contingency_percent,
-                        description: sel.user_description
+                        code: sel.isdc_code,
+                        isActive: true,
+                        isContractor: sel.is_contractor || false,
+                        contingencyPercent: sel.contingency_percent || 15,
                     });
                 });
             }
@@ -101,34 +97,32 @@ export default function Step1Page({ params }: Step1PageProps) {
         }
     }
 
-    // Handlers
-    const handleSelectionChange = (code: string, isSelected: boolean, contingency?: number) => {
+    // Handler matching ISDCTree's expected signature
+    const handleSelectionChange = (code: string, updates: Partial<ISDCSelection>) => {
         setSelections(prev => {
             const next = new Map(prev);
-            const current = next.get(code) || { isActive: false, contingency: 15 };
-
-            next.set(code, {
-                ...current,
-                isActive: isSelected,
-                contingency: contingency !== undefined ? contingency : current.contingency
-            });
-
-            // Logic: If selecting a child, ensure parents are visually handled by the Tree component,
-            // but here we just store raw state. The Tree component usually handles cascading visual logic.
-            // However, for pure data consistency:
-            // If we deselect a parent, we might want to deselect children? 
-            // For now, let's keep it simple: individual selection toggles.
-
+            const current = next.get(code) || {
+                code,
+                isActive: false,
+                isContractor: false,
+                contingencyPercent: 15
+            };
+            next.set(code, { ...current, ...updates });
             return next;
         });
     };
 
-    const handleBulkSelect = (codes: string[], isSelected: boolean) => {
+    const handleBulkSelect = (codes: string[], isActive: boolean) => {
         setSelections(prev => {
             const next = new Map(prev);
             codes.forEach(code => {
-                const current = next.get(code) || { isActive: false, contingency: 15 };
-                next.set(code, { ...current, isActive: isSelected });
+                const current = next.get(code) || {
+                    code,
+                    isActive: false,
+                    isContractor: false,
+                    contingencyPercent: 15
+                };
+                next.set(code, { ...current, isActive });
             });
             return next;
         });
@@ -139,17 +133,13 @@ export default function Step1Page({ params }: Step1PageProps) {
         setError(null);
 
         try {
-            // 1. Prepare data for upsert
-            // We only strictly need to save *active* selections to the DB
-            // But clearing old ones first is safer to handle deselections
-
             const activeSelections = Array.from(selections.entries())
                 .filter(([_, val]) => val.isActive)
                 .map(([code, val]) => ({
                     project_id: projectId,
                     isdc_code: code,
-                    contingency_percent: val.contingency,
-                    user_description: val.description,
+                    contingency_percent: val.contingencyPercent,
+                    is_contractor: val.isContractor,
                     is_active: true
                 }));
 
@@ -157,7 +147,7 @@ export default function Step1Page({ params }: Step1PageProps) {
                 throw new Error('Please select at least one ISDC item');
             }
 
-            // Transaction-like approach: Delete all for project, then insert new
+            // Delete old, insert new
             await supabase.from('project_isdc_selection').delete().eq('project_id', projectId);
 
             const { error: insertError } = await supabase
@@ -166,7 +156,6 @@ export default function Step1Page({ params }: Step1PageProps) {
 
             if (insertError) throw insertError;
 
-            // 2. Update Session
             await supabase
                 .from('wizard_sessions')
                 .upsert({
@@ -195,7 +184,6 @@ export default function Step1Page({ params }: Step1PageProps) {
 
         await handleSave();
 
-        // Mark step 1 as complete
         await supabase
             .from('wizard_sessions')
             .update({
@@ -229,16 +217,14 @@ export default function Step1Page({ params }: Step1PageProps) {
     }
 
     return (
-        <div className="fade-enter scale-95 origin-top transition-transform duration-500 ease-out animate-in fill-mode-forwards">
+        <div className="fade-enter">
             <div className="max-w-5xl mx-auto">
-                {/* Progress */}
                 <WizardProgress
                     currentStep={1}
                     completedSteps={completedSteps}
                     onStepClick={handleStepClick}
                 />
 
-                {/* Header */}
                 <div className="mb-6">
                     <h1 className="text-3xl font-black text-slate-900 tracking-tight flex items-center gap-3">
                         <ListTree className="text-blue-500" />
@@ -263,7 +249,6 @@ export default function Step1Page({ params }: Step1PageProps) {
                     </div>
                 </div>
 
-                {/* Error */}
                 {error && (
                     <div className="mb-6 flex items-center gap-3 p-4 bg-red-50 border border-red-200 rounded-xl text-red-700">
                         <AlertCircle size={20} />
@@ -274,22 +259,15 @@ export default function Step1Page({ params }: Step1PageProps) {
                 {/* Selection Summary */}
                 <div className="mb-4 flex items-center justify-between">
                     <div className="flex items-center gap-4">
-                        <div className={`
-            px-4 py-2 rounded-xl flex items-center gap-2
-            ${activeCount > 0 ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500'}
-          `}>
+                        <div className={`px-4 py-2 rounded-xl flex items-center gap-2 ${activeCount > 0 ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500'}`}>
                             {activeCount > 0 && <CheckCircle2 size={16} />}
-                            <span className="text-sm font-semibold">
-                                {activeCount} items selected
-                            </span>
+                            <span className="text-sm font-semibold">{activeCount} items selected</span>
                         </div>
                     </div>
 
-                    {/* Quick Actions */}
                     <div className="flex items-center gap-2">
                         <button
                             onClick={() => {
-                                // Select all L1 items
                                 const l1Codes = ALL_ISDC_ITEMS.filter(i => i.level === 1).map(i => i.code);
                                 handleBulkSelect(l1Codes, true);
                             }}
@@ -300,7 +278,6 @@ export default function Step1Page({ params }: Step1PageProps) {
                         <span className="text-slate-300">|</span>
                         <button
                             onClick={() => {
-                                // Deselect all
                                 const allCodes = ALL_ISDC_ITEMS.map(i => i.code);
                                 handleBulkSelect(allCodes, false);
                             }}
@@ -320,7 +297,6 @@ export default function Step1Page({ params }: Step1PageProps) {
                     />
                 </div>
 
-                {/* Navigation */}
                 <WizardNavigation
                     currentStep={1}
                     onBack={handleBack}

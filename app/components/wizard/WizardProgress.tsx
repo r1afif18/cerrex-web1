@@ -1,6 +1,6 @@
 'use client';
 
-import { Check, Circle } from 'lucide-react';
+import { Check } from 'lucide-react';
 
 interface WizardProgressProps {
     currentStep: number;
@@ -10,82 +10,102 @@ interface WizardProgressProps {
 
 const STEPS = [
     { id: 0, label: 'Context', short: 'Ctx' },
-    { id: 1, label: 'Scope', short: 'Scope' },
-    { id: 2, label: 'Inv', short: 'Inv' },
+    { id: 1, label: 'Scope', short: 'Scp' },
+    { id: 2, label: 'Inventory', short: 'Inv' },
     { id: 3, label: 'Waste', short: 'Wst' },
     { id: 4, label: 'Factors', short: 'UF' },
     { id: 5, label: 'Period', short: 'Per' },
-    { id: 6, label: 'Cont', short: 'Cont' },
-    { id: 7, label: 'Res', short: 'Res' },
-    { id: 8, label: 'Cash', short: 'CF' },
-    { id: 9, label: 'Sens', short: 'Sens' },
+    { id: 6, label: 'Contingency', short: 'Cnt' },
+    { id: 7, label: 'Results', short: 'Res' },
+    { id: 8, label: 'Cashflow', short: 'CF' },
+    { id: 9, label: 'Sensitivity', short: 'Sen' },
 ];
 
 export function WizardProgress({ currentStep, completedSteps, onStepClick }: WizardProgressProps) {
-    {
-        isCompleted && !isCurrent ? (
-            <Check size={18} strokeWidth={3} />
-        ) : isLocked ? (
-            <Lock size={14} className="opacity-70" />
-        ) : (
-        <span className="text-sm font-bold font-mono">{index}</span>
-    )
-    }
-                                    </div >
-
-        {/* Label */ }
-        < div className = "flex flex-col items-center text-center" >
-            <span className={cn(
-                "text-[10px] uppercase tracking-wider font-bold transition-colors duration-300",
-                isCurrent ? "text-blue-600 dark:text-blue-400 translate-y-0 opacity-100" :
-                    isCompleted ? "text-emerald-600 dark:text-emerald-500" : "text-slate-400 dark:text-slate-500",
-                // Hide ineffective labels on small screens or when inactive to reduce clutter
-                !isCurrent && "hidden md:block" // Always show on MD screens, hide inactive on mobile
-            )}>
-                {step.name}
-            </span>
-
-    {/* Active Indicator Dot for current step */ }
-    {
-        isCurrent && (
-            <span className="w-1 h-1 bg-blue-600 rounded-full mt-1 animate-pulse" />
-        )
-    }
-                                    </div >
-                                </button >
-                            </div >
-                        );
-})}
-                </div >
-            </div >
-        </div >
-    );
-}
-
-// Compact version remains for minimal contexts
-export function WizardProgressCompact({ currentStep, completedSteps }: WizardProgressProps) {
     const completedCount = completedSteps.filter(Boolean).length;
-    const progress = (completedCount / WIZARD_STEPS.length) * 100;
+    const progress = Math.round((completedCount / STEPS.length) * 100);
 
     return (
-        <div className="w-full max-w-4xl mx-auto mb-6">
-            <div className="glass-panel rounded-xl p-4 flex items-center gap-4">
-                <div className="flex-1">
-                    <div className="flex justify-between text-xs mb-2 font-medium text-slate-500">
-                        <span>Step {currentStep + 1} of {WIZARD_STEPS.length}</span>
-                        <span>{Math.round(progress)}% Complete</span>
-                    </div>
-                    <div className="h-2 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
-                        <div
-                            className="h-full bg-gradient-to-r from-blue-500 to-emerald-400 transition-all duration-500 ease-out"
-                            style={{ width: `${progress}%` }}
-                        />
-                    </div>
-                </div>
-                <div className="px-3 py-1 bg-slate-100 dark:bg-slate-800 rounded-lg whitespace-nowrap">
-                    <span className="text-sm font-bold text-slate-700 dark:text-slate-200">
-                        {WIZARD_STEPS[currentStep]?.name}
+        <div className="w-full mb-8">
+            {/* Header Row */}
+            <div className="flex items-center justify-between mb-4 px-1">
+                <div>
+                    <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                        Step {currentStep + 1} of {STEPS.length}
                     </span>
+                    <h2 className="text-lg font-black text-slate-800 leading-tight">
+                        {STEPS[currentStep]?.label || 'Wizard'}
+                    </h2>
+                </div>
+                <div className="text-right">
+                    <div className="text-2xl font-black text-blue-600 leading-none">{progress}%</div>
+                    <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Complete</div>
+                </div>
+            </div>
+
+            {/* Progress Steps */}
+            <div className="relative">
+                {/* Background Line */}
+                <div className="absolute top-4 left-0 w-full h-0.5 bg-slate-200 rounded-full" />
+
+                {/* Active Progress Line */}
+                <div
+                    className="absolute top-4 left-0 h-0.5 bg-blue-500 rounded-full transition-all duration-500 ease-out"
+                    style={{ width: `${(currentStep / (STEPS.length - 1)) * 100}%` }}
+                />
+
+                {/* Step Indicators */}
+                <div className="relative flex justify-between">
+                    {STEPS.map((step) => {
+                        const isCompleted = completedSteps[step.id];
+                        const isActive = currentStep === step.id;
+                        const canClick = isCompleted || isActive || step.id === 0 || completedSteps[step.id - 1];
+
+                        // Build class string manually (no cn utility needed)
+                        let circleClasses = 'w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold border-2 transition-all duration-300 z-10 ';
+
+                        if (isActive) {
+                            circleClasses += 'bg-blue-600 border-blue-600 text-white scale-110 shadow-lg shadow-blue-500/30';
+                        } else if (isCompleted) {
+                            circleClasses += 'bg-emerald-500 border-emerald-500 text-white';
+                        } else {
+                            circleClasses += 'bg-white border-slate-200 text-slate-400';
+                        }
+
+                        if (canClick) {
+                            circleClasses += ' cursor-pointer hover:scale-105';
+                        } else {
+                            circleClasses += ' cursor-not-allowed opacity-50';
+                        }
+
+                        let labelClasses = 'hidden sm:block text-[10px] font-bold uppercase tracking-wider mt-2 transition-colors ';
+                        if (isActive) {
+                            labelClasses += 'text-blue-600';
+                        } else if (isCompleted) {
+                            labelClasses += 'text-emerald-600';
+                        } else {
+                            labelClasses += 'text-slate-300';
+                        }
+
+                        return (
+                            <div key={step.id} className="flex flex-col items-center">
+                                <button
+                                    onClick={() => canClick && onStepClick(step.id)}
+                                    disabled={!canClick}
+                                    className={circleClasses}
+                                    type="button"
+                                    aria-label={`Go to step ${step.id + 1}: ${step.label}`}
+                                >
+                                    {isCompleted && !isActive ? (
+                                        <Check size={14} strokeWidth={3} />
+                                    ) : (
+                                        <span>{step.id}</span>
+                                    )}
+                                </button>
+                                <span className={labelClasses}>{step.short}</span>
+                            </div>
+                        );
+                    })}
                 </div>
             </div>
         </div>
