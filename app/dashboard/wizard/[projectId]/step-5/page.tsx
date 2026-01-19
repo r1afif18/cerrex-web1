@@ -248,130 +248,128 @@ export default function Step5Page({ params }: Step5PageProps) {
 
     return (
         <div className="fade-enter">
-            <div className="max-w-5xl mx-auto">
-                <WizardProgress
-                    currentStep={5}
-                    completedSteps={completedSteps}
-                    onStepClick={handleStepClick}
-                />
+            <WizardProgress
+                currentStep={5}
+                completedSteps={completedSteps}
+                onStepClick={handleStepClick}
+            />
 
-                <div className="mb-6">
-                    <h1 className="text-3xl font-black text-slate-900 tracking-tight flex items-center gap-3">
-                        <Clock className="text-amber-500" />
-                        Period Costs
-                    </h1>
-                    <p className="text-slate-500 mt-2">
-                        Define project phases and staff allocation for period-dependent labour costs.
-                    </p>
+            <div className="mb-6">
+                <h1 className="text-3xl font-black text-slate-900 tracking-tight flex items-center gap-3">
+                    <Clock className="text-amber-500" />
+                    Period Costs
+                </h1>
+                <p className="text-slate-500 mt-2">
+                    Define project phases and staff allocation for period-dependent labour costs.
+                </p>
+            </div>
+
+            {error && (
+                <div className="mb-6 flex items-center gap-3 p-4 bg-red-50 border border-red-200 rounded-xl text-red-700">
+                    <AlertCircle size={20} />
+                    <span>{error}</span>
                 </div>
+            )}
 
-                {error && (
-                    <div className="mb-6 flex items-center gap-3 p-4 bg-red-50 border border-red-200 rounded-xl text-red-700">
-                        <AlertCircle size={20} />
-                        <span>{error}</span>
-                    </div>
-                )}
-
-                {/* Summary */}
-                <div className="grid grid-cols-3 gap-4 mb-6">
-                    <div className="glass-panel rounded-xl p-4">
-                        <div className="text-2xl font-black text-slate-900">{phases.length}</div>
-                        <div className="text-xs text-slate-500 font-medium">Phases</div>
-                    </div>
-                    <div className="glass-panel rounded-xl p-4">
-                        <div className="text-2xl font-black text-blue-600">{totalDuration} mo</div>
-                        <div className="text-xs text-slate-500 font-medium">Total Duration</div>
-                    </div>
-                    <div className="glass-panel rounded-xl p-4">
-                        <div className="text-2xl font-black text-emerald-600">{totalStaff}</div>
-                        <div className="text-xs text-slate-500 font-medium">Peak Staff</div>
-                    </div>
+            {/* Summary */}
+            <div className="grid grid-cols-3 gap-4 mb-6">
+                <div className="glass-panel rounded-xl p-4">
+                    <div className="text-2xl font-black text-slate-900">{phases.length}</div>
+                    <div className="text-xs text-slate-500 font-medium">Phases</div>
                 </div>
+                <div className="glass-panel rounded-xl p-4">
+                    <div className="text-2xl font-black text-blue-600">{totalDuration} mo</div>
+                    <div className="text-xs text-slate-500 font-medium">Total Duration</div>
+                </div>
+                <div className="glass-panel rounded-xl p-4">
+                    <div className="text-2xl font-black text-emerald-600">{totalStaff}</div>
+                    <div className="text-xs text-slate-500 font-medium">Peak Staff</div>
+                </div>
+            </div>
 
-                {/* Phases */}
-                <div className="space-y-4">
-                    {phases.map((phase, index) => (
-                        <div key={phase.id} className="glass-panel rounded-2xl p-6">
-                            <div className="flex items-center justify-between mb-4">
-                                <div className="flex items-center gap-4">
-                                    <span className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-sm font-bold">
-                                        {index + 1}
-                                    </span>
-                                    <input
-                                        type="text"
-                                        value={phase.name}
-                                        onChange={(e) => updatePhase(phase.id, { name: e.target.value })}
-                                        className="text-lg font-semibold text-slate-800 bg-transparent border-b border-transparent hover:border-slate-300 focus:border-blue-400 focus:outline-none px-1"
-                                    />
-                                </div>
-                                <div className="flex items-center gap-4">
-                                    <div className="flex items-center gap-2">
-                                        <span className="text-sm text-slate-500">Duration:</span>
-                                        <input
-                                            type="number"
-                                            value={phase.durationMonths}
-                                            onChange={(e) => updatePhase(phase.id, { durationMonths: parseInt(e.target.value) || 0 })}
-                                            min={1}
-                                            max={120}
-                                            className="w-16 text-center px-2 py-1 border border-slate-200 rounded text-sm font-semibold focus:border-blue-400 focus:outline-none"
-                                        />
-                                        <span className="text-sm text-slate-500">months</span>
-                                    </div>
-                                    {phases.length > 1 && (
-                                        <button
-                                            onClick={() => removePhase(phase.id)}
-                                            className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                                        >
-                                            <Trash2 size={18} />
-                                        </button>
-                                    )}
-                                </div>
+            {/* Phases */}
+            <div className="space-y-4">
+                {phases.map((phase, index) => (
+                    <div key={phase.id} className="glass-panel rounded-2xl p-6">
+                        <div className="flex items-center justify-between mb-4">
+                            <div className="flex items-center gap-4">
+                                <span className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-sm font-bold">
+                                    {index + 1}
+                                </span>
+                                <input
+                                    type="text"
+                                    value={phase.name}
+                                    onChange={(e) => updatePhase(phase.id, { name: e.target.value })}
+                                    className="text-lg font-semibold text-slate-800 bg-transparent border-b border-transparent hover:border-slate-300 focus:border-blue-400 focus:outline-none px-1"
+                                />
                             </div>
-
-                            {/* Staff Grid */}
-                            <div className="mt-4">
-                                <h4 className="text-sm font-semibold text-slate-600 mb-3 flex items-center gap-2">
-                                    <Users size={16} />
-                                    Staff Allocation
-                                </h4>
-                                <div className="grid grid-cols-4 gap-3">
-                                    {PROFESSIONS.map(prof => (
-                                        <div key={prof.code} className="flex items-center justify-between p-2 bg-slate-50 rounded-lg">
-                                            <span className="text-xs font-medium text-slate-600">{prof.abbrev}</span>
-                                            <input
-                                                type="number"
-                                                value={phase.staff[prof.code] || 0}
-                                                onChange={(e) => updateStaff(phase.id, prof.code, parseInt(e.target.value) || 0)}
-                                                min={0}
-                                                className="w-12 text-center px-1 py-0.5 border border-slate-200 rounded text-sm focus:border-blue-400 focus:outline-none"
-                                            />
-                                        </div>
-                                    ))}
+                            <div className="flex items-center gap-4">
+                                <div className="flex items-center gap-2">
+                                    <span className="text-sm text-slate-500">Duration:</span>
+                                    <input
+                                        type="number"
+                                        value={phase.durationMonths}
+                                        onChange={(e) => updatePhase(phase.id, { durationMonths: parseInt(e.target.value) || 0 })}
+                                        min={1}
+                                        max={120}
+                                        className="w-16 text-center px-2 py-1 border border-slate-200 rounded text-sm font-semibold focus:border-blue-400 focus:outline-none"
+                                    />
+                                    <span className="text-sm text-slate-500">months</span>
                                 </div>
+                                {phases.length > 1 && (
+                                    <button
+                                        onClick={() => removePhase(phase.id)}
+                                        className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                                    >
+                                        <Trash2 size={18} />
+                                    </button>
+                                )}
                             </div>
                         </div>
-                    ))}
 
-                    <button
-                        onClick={addPhase}
-                        className="w-full flex items-center justify-center gap-2 py-4 border-2 border-dashed border-slate-300 rounded-xl text-slate-500 hover:border-blue-400 hover:text-blue-600 hover:bg-blue-50/50 transition-all"
-                    >
-                        <Plus size={20} />
-                        Add Phase
-                    </button>
-                </div>
+                        {/* Staff Grid */}
+                        <div className="mt-4">
+                            <h4 className="text-sm font-semibold text-slate-600 mb-3 flex items-center gap-2">
+                                <Users size={16} />
+                                Staff Allocation
+                            </h4>
+                            <div className="grid grid-cols-4 gap-3">
+                                {PROFESSIONS.map(prof => (
+                                    <div key={prof.code} className="flex items-center justify-between p-2 bg-slate-50 rounded-lg">
+                                        <span className="text-xs font-medium text-slate-600">{prof.abbrev}</span>
+                                        <input
+                                            type="number"
+                                            value={phase.staff[prof.code] || 0}
+                                            onChange={(e) => updateStaff(phase.id, prof.code, parseInt(e.target.value) || 0)}
+                                            min={0}
+                                            className="w-12 text-center px-1 py-0.5 border border-slate-200 rounded text-sm focus:border-blue-400 focus:outline-none"
+                                        />
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                ))}
 
-                <WizardNavigation
-                    currentStep={5}
-                    onBack={handleBack}
-                    onNext={handleNext}
-                    onSaveDraft={handleSave}
-                    isLoading={false}
-                    isSaving={isSaving}
-                    canProceed={phases.length > 0}
-                    showSaveSuccess={showSaveSuccess}
-                />
+                <button
+                    onClick={addPhase}
+                    className="w-full flex items-center justify-center gap-2 py-4 border-2 border-dashed border-slate-300 rounded-xl text-slate-500 hover:border-blue-400 hover:text-blue-600 hover:bg-blue-50/50 transition-all"
+                >
+                    <Plus size={20} />
+                    Add Phase
+                </button>
             </div>
+
+            <WizardNavigation
+                currentStep={5}
+                onBack={handleBack}
+                onNext={handleNext}
+                onSaveDraft={handleSave}
+                isLoading={false}
+                isSaving={isSaving}
+                canProceed={phases.length > 0}
+                showSaveSuccess={showSaveSuccess}
+            />
         </div>
     );
 }

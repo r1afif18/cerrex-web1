@@ -5,14 +5,13 @@ import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { WizardProgress } from '@/app/components/wizard/WizardProgress';
 import { WizardNavigation } from '@/app/components/wizard/WizardNavigation';
-import { DD_CATEGORIES, DDCategory } from '@/lib/wizard/dd-categories';
+import { DD_CATEGORIES } from '@/lib/wizard/dd-categories';
 import {
-    Calculator, AlertCircle, Loader2, RotateCcw,
-    Search, SlidersHorizontal
+    Calculator, AlertCircle, Loader2, Info, RotateCcw
 } from 'lucide-react';
 
-interface CategoryUF {
-    code: string;
+interface UnitFactor {
+    categoryCode: string;
     manpowerUF: number;
     investmentUF: number;
     expensesUF: number;
@@ -34,8 +33,7 @@ export default function Step4Page({ params }: Step4PageProps) {
     const [completedSteps, setCompletedSteps] = useState<boolean[]>(Array(10).fill(false));
     const [error, setError] = useState<string | null>(null);
 
-    const [unitFactors, setUnitFactors] = useState<Map<string, CategoryUF>>(new Map());
-    const [searchTerm, setSearchTerm] = useState('');
+    const [unitFactors, setUnitFactors] = useState<Map<string, UnitFactor>>(new Map());
     const [activeTab, setActiveTab] = useState<'mass' | 'area'>('mass');
 
     useEffect(() => {
@@ -44,13 +42,13 @@ export default function Step4Page({ params }: Step4PageProps) {
     }, [projectId]);
 
     function initializeDefaults() {
-        const defaults = new Map<string, CategoryUF>();
+        const defaults = new Map<string, UnitFactor>();
         DD_CATEGORIES.forEach(cat => {
             defaults.set(cat.code, {
-                code: cat.code,
+                categoryCode: cat.code,
                 manpowerUF: cat.defaultManpowerUF,
                 investmentUF: cat.defaultInvestmentUF,
-                expensesUF: cat.defaultExpensesUF
+                expensesUF: cat.defaultExpensesUF,
             });
         });
         setUnitFactors(defaults);
@@ -80,8 +78,28 @@ export default function Step4Page({ params }: Step4PageProps) {
                 ]);
             }
 
-            // Load custom UF if saved (omitted for brevity, using defaults for now)
+            // Load custom unit factors from dd_categories table
+            const { data: ddData } = await supabase
+                .from('dd_categories')
+                .select('*')
+                .eq('project_id', projectId);
 
+            if (ddData && ddData.length > 0) {
+                setUnitFactors(prev => {
+                    const updated = new Map(prev);
+                    ddData.forEach((row: { code: string; manpower_uf: number; investment_uf: number; expenses_uf: number }) => {
+                        if (updated.has(row.code)) {
+                            updated.set(row.code, {
+                                categoryCode: row.code,
+                                manpowerUF: row.manpower_uf ?? updated.get(row.code)!.manpowerUF,
+                                investmentUF: row.investment_uf ?? updated.get(row.code)!.investmentUF,
+                                expensesUF: row.expenses_uf ?? updated.get(row.code)!.expensesUF,
+                            });
+                        }
+                    });
+                    return updated;
+                });
+            }
         } catch (err) {
             console.error('Error loading:', err);
         } finally {
@@ -92,32 +110,26 @@ export default function Step4Page({ params }: Step4PageProps) {
     function updateUF(code: string, field: 'manpowerUF' | 'investmentUF' | 'expensesUF', value: number) {
         setUnitFactors(prev => {
             const updated = new Map(prev);
-            const current = updated.get(code)!;
-            updated.set(code, { ...current, [field]: value });
+            const current = updated.get(code);
+            if (current) {
+                updated.set(code, { ...current, [field]: value });
+            }
             return updated;
         });
     }
 
     function resetToDefaults() {
-        if (confirm('Reset all Unit Factors to default CERREX values?')) {
-            initializeDefaults();
-        }
+        initializeDefaults();
     }
-
-    const filteredCategories = DD_CATEGORIES.filter(cat => {
-        const matchesSearch = cat.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            cat.code.toLowerCase().includes(searchTerm.toLowerCase());
-        const matchesTab = activeTab === 'mass' ? cat.unit === 't' : cat.unit === 'm²';
-        return matchesSearch && matchesTab;
-    });
 
     async function handleSave() {
         setIsSaving(true);
         setError(null);
 
         try {
-            // In a real app, save to a `project_unit_factors` table
-            // For now we just update session timestamp
+            // For now, we store customized UF in the wizard context
+            // In production, this would update dd_categories per project
+
             await supabase
                 .from('wizard_sessions')
                 .upsert({
@@ -159,6 +171,13 @@ export default function Step4Page({ params }: Step4PageProps) {
         router.push(`/dashboard/wizard/${projectId}/step-${step}`);
     }
 
+    // Filter categories by unit type
+    const filteredCategories = DD_CATEGORIES.filter(cat => {
+        if (cat.defaultManpowerUF === 0) return false;
+        if (activeTab === 'mass') return cat.unit === 't';
+        return cat.unit === 'm²';
+    });
+
     if (isLoading) {
         return (
             <div className="flex flex-col items-center justify-center h-[60vh] gap-4">
@@ -170,141 +189,146 @@ export default function Step4Page({ params }: Step4PageProps) {
 
     return (
         <div className="fade-enter">
-            <div className="max-w-5xl mx-auto">
-                <WizardProgress
-                    currentStep={4}
-                    completedSteps={completedSteps}
-                    onStepClick={handleStepClick}
-                />
+            <WizardProgress
+                currentStep={4}
+                completedSteps={completedSteps}
+                onStepClick={handleStepClick}
+            />
 
-                <div className="mb-6">
-                    <h1 className="text-3xl font-black text-slate-900 tracking-tight flex items-center gap-3">
-                        <Calculator className="text-emerald-500" />
-                        Unit Factors
-                    </h1>
-                    <p className="text-slate-500 mt-2">
-                        Review and customize the Unit Factors (UF) used to calculate costs for each D&D category.
+            <div className="mb-6">
+                <h1 className="text-3xl font-black text-slate-900 tracking-tight flex items-center gap-3">
+                    <Calculator className="text-violet-500" />
+                    Unit Factors
+                </h1>
+                <p className="text-slate-500 mt-2">
+                    Customize unit factors for cost calculation. These define cost per unit (tonne or m²) of inventory.
+                </p>
+            </div>
+
+            <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-xl flex items-start gap-3">
+                <Info size={20} className="text-blue-500 flex-shrink-0 mt-0.5" />
+                <div className="text-sm text-blue-800">
+                    <p className="font-medium">Unit Factor Formula</p>
+                    <p className="mt-1 text-blue-700 font-mono text-xs">
+                        Cost = Quantity × UF × WDF × Labour_Rate
+                    </p>
+                    <p className="mt-1 text-blue-600 text-xs">
+                        Manpower UF = man-hours per unit | Investment/Expenses UF = € per unit
                     </p>
                 </div>
+            </div>
 
-                {error && (
-                    <div className="mb-6 flex items-center gap-3 p-4 bg-red-50 border border-red-200 rounded-xl text-red-700">
-                        <AlertCircle size={20} />
-                        <span>{error}</span>
-                    </div>
-                )}
+            {error && (
+                <div className="mb-6 flex items-center gap-3 p-4 bg-red-50 border border-red-200 rounded-xl text-red-700">
+                    <AlertCircle size={20} />
+                    <span>{error}</span>
+                </div>
+            )}
 
-                {/* Toolbar */}
-                <div className="flex items-center justify-between mb-6">
-                    <div className="flex items-center gap-2 bg-slate-100 p-1 rounded-xl">
+            <div className="glass-panel rounded-2xl overflow-hidden">
+                {/* Tabs & Actions */}
+                <div className="bg-slate-50 px-4 py-3 flex items-center justify-between border-b border-slate-200">
+                    <div className="flex items-center gap-1 p-1 bg-slate-200 rounded-lg">
                         <button
                             onClick={() => setActiveTab('mass')}
-                            className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${activeTab === 'mass' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                            className={`px-4 py-1.5 text-sm font-semibold rounded-md transition-all ${activeTab === 'mass' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500'
+                                }`}
                         >
-                            Mass Based (t)
+                            Mass-based (tonnes)
                         </button>
                         <button
                             onClick={() => setActiveTab('area')}
-                            className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${activeTab === 'area' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                            className={`px-4 py-1.5 text-sm font-semibold rounded-md transition-all ${activeTab === 'area' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500'
+                                }`}
                         >
-                            Area Based (m²)
+                            Area-based (m²)
                         </button>
                     </div>
 
-                    <div className="flex items-center gap-3">
-                        <div className="relative">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-                            <input
-                                type="text"
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                                placeholder="Search categories..."
-                                className="pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-sm focus:border-blue-400 outline-none w-64"
-                            />
-                        </div>
-
-                        <button
-                            onClick={resetToDefaults}
-                            className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                            title="Reset to Defaults"
-                        >
-                            <RotateCcw size={20} />
-                        </button>
-                    </div>
+                    <button
+                        onClick={resetToDefaults}
+                        className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"
+                    >
+                        <RotateCcw size={14} />
+                        Reset Defaults
+                    </button>
                 </div>
 
-                {/* UF Grid */}
-                <div className="glass-panel rounded-2xl overflow-hidden">
-                    <div className="bg-slate-50 px-4 py-3 border-b border-slate-200 grid grid-cols-12 gap-4 text-xs font-semibold text-slate-500 uppercase">
-                        <div className="col-span-1">Code</div>
-                        <div className="col-span-5">Category Name</div>
-                        <div className="col-span-2 text-center">Manpower (hr/unit)</div>
-                        <div className="col-span-2 text-center">Inv. (€/unit)</div>
-                        <div className="col-span-2 text-center">Exp. (€/unit)</div>
-                    </div>
+                {/* Table */}
+                <div className="max-h-[450px] overflow-y-auto">
+                    <table className="w-full text-sm">
+                        <thead className="bg-slate-50 sticky top-0">
+                            <tr className="text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                                <th className="px-4 py-3">Code</th>
+                                <th className="px-4 py-3">Category</th>
+                                <th className="px-4 py-3 text-center">Manpower UF<br /><span className="normal-case font-normal">(man-h/{activeTab === 'mass' ? 't' : 'm²'})</span></th>
+                                <th className="px-4 py-3 text-center">Investment UF<br /><span className="normal-case font-normal">(€/{activeTab === 'mass' ? 't' : 'm²'})</span></th>
+                                <th className="px-4 py-3 text-center">Expenses UF<br /><span className="normal-case font-normal">(€/{activeTab === 'mass' ? 't' : 'm²'})</span></th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                            {filteredCategories.map(cat => {
+                                const uf = unitFactors.get(cat.code);
+                                const isModified = uf && (
+                                    uf.manpowerUF !== cat.defaultManpowerUF ||
+                                    uf.investmentUF !== cat.defaultInvestmentUF ||
+                                    uf.expensesUF !== cat.defaultExpensesUF
+                                );
 
-                    <div className="divide-y divide-slate-100 max-h-[500px] overflow-y-auto">
-                        {filteredCategories.map(cat => {
-                            const current = unitFactors.get(cat.code) || {
-                                manpowerUF: cat.defaultManpowerUF,
-                                investmentUF: cat.defaultInvestmentUF,
-                                expensesUF: cat.defaultExpensesUF
-                            };
-
-                            const isModified =
-                                current.manpowerUF !== cat.defaultManpowerUF ||
-                                current.investmentUF !== cat.defaultInvestmentUF ||
-                                current.expensesUF !== cat.defaultExpensesUF;
-
-                            return (
-                                <div
-                                    key={cat.code}
-                                    className={`grid grid-cols-12 gap-4 px-4 py-3 items-center hover:bg-blue-50/10 transition-colors ${isModified ? 'bg-amber-50/30' : ''}`}
-                                >
-                                    <div className="col-span-1 font-mono text-xs font-bold text-slate-500">{cat.code}</div>
-                                    <div className="col-span-5 text-sm font-medium text-slate-800 truncate" title={cat.name}>{cat.name}</div>
-
-                                    <div className="col-span-2">
-                                        <input
-                                            type="number"
-                                            value={current.manpowerUF}
-                                            onChange={(e) => updateUF(cat.code, 'manpowerUF', parseFloat(e.target.value))}
-                                            className={`w-full text-center py-1 rounded border text-sm font-mono focus:border-blue-500 outline-none ${current.manpowerUF !== cat.defaultManpowerUF ? 'border-amber-400 bg-amber-50 text-amber-700 font-bold' : 'border-slate-200 text-slate-600'}`}
-                                        />
-                                    </div>
-                                    <div className="col-span-2">
-                                        <input
-                                            type="number"
-                                            value={current.investmentUF}
-                                            onChange={(e) => updateUF(cat.code, 'investmentUF', parseFloat(e.target.value))}
-                                            className={`w-full text-center py-1 rounded border text-sm font-mono focus:border-blue-500 outline-none ${current.investmentUF !== cat.defaultInvestmentUF ? 'border-amber-400 bg-amber-50 text-amber-700 font-bold' : 'border-slate-200 text-slate-600'}`}
-                                        />
-                                    </div>
-                                    <div className="col-span-2">
-                                        <input
-                                            type="number"
-                                            value={current.expensesUF}
-                                            onChange={(e) => updateUF(cat.code, 'expensesUF', parseFloat(e.target.value))}
-                                            className={`w-full text-center py-1 rounded border text-sm font-mono focus:border-blue-500 outline-none ${current.expensesUF !== cat.defaultExpensesUF ? 'border-amber-400 bg-amber-50 text-amber-700 font-bold' : 'border-slate-200 text-slate-600'}`}
-                                        />
-                                    </div>
-                                </div>
-                            );
-                        })}
-                    </div>
+                                return (
+                                    <tr key={cat.code} className={`hover:bg-slate-50 ${isModified ? 'bg-amber-50' : ''}`}>
+                                        <td className="px-4 py-3">
+                                            <span className="font-mono text-xs bg-slate-100 px-1.5 py-0.5 rounded">{cat.code}</span>
+                                        </td>
+                                        <td className="px-4 py-3 font-medium text-slate-800">{cat.name}</td>
+                                        <td className="px-4 py-3 text-center">
+                                            <input
+                                                type="number"
+                                                value={uf?.manpowerUF ?? cat.defaultManpowerUF}
+                                                onChange={(e) => updateUF(cat.code, 'manpowerUF', parseFloat(e.target.value) || 0)}
+                                                min={0}
+                                                step={0.1}
+                                                className="w-20 text-center px-2 py-1 border border-slate-200 rounded text-sm focus:border-blue-400 focus:outline-none"
+                                            />
+                                        </td>
+                                        <td className="px-4 py-3 text-center">
+                                            <input
+                                                type="number"
+                                                value={uf?.investmentUF ?? cat.defaultInvestmentUF}
+                                                onChange={(e) => updateUF(cat.code, 'investmentUF', parseFloat(e.target.value) || 0)}
+                                                min={0}
+                                                step={1}
+                                                className="w-20 text-center px-2 py-1 border border-slate-200 rounded text-sm focus:border-blue-400 focus:outline-none"
+                                            />
+                                        </td>
+                                        <td className="px-4 py-3 text-center">
+                                            <input
+                                                type="number"
+                                                value={uf?.expensesUF ?? cat.defaultExpensesUF}
+                                                onChange={(e) => updateUF(cat.code, 'expensesUF', parseFloat(e.target.value) || 0)}
+                                                min={0}
+                                                step={1}
+                                                className="w-20 text-center px-2 py-1 border border-slate-200 rounded text-sm focus:border-blue-400 focus:outline-none"
+                                            />
+                                        </td>
+                                    </tr>
+                                );
+                            })}
+                        </tbody>
+                    </table>
                 </div>
-
-                <WizardNavigation
-                    currentStep={4}
-                    onBack={handleBack}
-                    onNext={handleNext}
-                    onSaveDraft={handleSave}
-                    isLoading={false}
-                    isSaving={isSaving}
-                    canProceed={true}
-                    showSaveSuccess={showSaveSuccess}
-                />
             </div>
+
+            <WizardNavigation
+                currentStep={4}
+                onBack={handleBack}
+                onNext={handleNext}
+                onSaveDraft={handleSave}
+                isLoading={false}
+                isSaving={isSaving}
+                canProceed={true}
+                showSaveSuccess={showSaveSuccess}
+            />
         </div>
     );
 }
