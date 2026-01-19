@@ -6,7 +6,7 @@ import { createClient } from '@/lib/supabase/client';
 import { WizardProgress } from '@/app/components/wizard/WizardProgress';
 import { WizardNavigation } from '@/app/components/wizard/WizardNavigation';
 import { Building2, Settings2, Coins, AlertCircle, Loader2 } from 'lucide-react';
-import { FACILITY_TYPES, DECOMMISSIONING_STRATEGIES, DEFAULT_CURRENCIES } from '@/lib/wizard/constants';
+import { FACILITY_TYPES, DECOM_STRATEGIES, DEFAULT_CURRENCIES } from '@/lib/wizard/constants';
 
 interface Step0PageProps {
     params: Promise<{ projectId: string }>;
@@ -29,7 +29,7 @@ export default function Step0Page({ params }: Step0PageProps) {
         name: '',
         description: '',
         facilityType: '',
-        strategy: 'IMM',
+        strategy: 'IMMEDIATE', // Matches value in constants
         currency: 'EUR',
         labourRate: 50,
         referenceYear: 2026,
@@ -79,7 +79,7 @@ export default function Step0Page({ params }: Step0PageProps) {
                         name: session.project.name || '',
                         description: session.project.description || '',
                         facilityType: session.project.facility_type || '',
-                        strategy: session.project.decommissioning_strategy || 'IMM',
+                        strategy: session.project.decommissioning_strategy || 'IMMEDIATE',
                         currency: session.project.reference_currency || 'EUR',
                         labourRate: session.project.reference_labour_rate || 50,
                         referenceYear: session.project.reference_year || 2026,
@@ -227,7 +227,7 @@ export default function Step0Page({ params }: Step0PageProps) {
                                 >
                                     <option value="" disabled>Select Type</option>
                                     {FACILITY_TYPES.map(type => (
-                                        <option key={type.id} value={type.id}>{type.name}</option>
+                                        <option key={type.value} value={type.value}>{type.label}</option>
                                     ))}
                                 </select>
                             </div>
@@ -255,12 +255,12 @@ export default function Step0Page({ params }: Step0PageProps) {
                             <div className="space-y-2">
                                 <label className="text-sm font-semibold text-slate-700">Decommissioning Strategy <span className="text-red-500">*</span></label>
                                 <div className="grid grid-cols-1 gap-3">
-                                    {DECOMMISSIONING_STRATEGIES.map(strat => (
+                                    {DECOM_STRATEGIES.map(strat => (
                                         <label
-                                            key={strat.id}
+                                            key={strat.value}
                                             className={`
                         flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all
-                        ${form.strategy === strat.id
+                        ${form.strategy === strat.value
                                                     ? 'bg-blue-50 border-blue-500 shadow-sm'
                                                     : 'bg-white border-slate-200 hover:border-blue-300'
                                                 }
@@ -269,13 +269,13 @@ export default function Step0Page({ params }: Step0PageProps) {
                                             <input
                                                 type="radio"
                                                 name="strategy"
-                                                value={strat.id}
-                                                checked={form.strategy === strat.id}
+                                                value={strat.value}
+                                                checked={form.strategy === strat.value}
                                                 onChange={(e) => updateForm('strategy', e.target.value)}
                                                 className="text-blue-600 focus:ring-blue-500"
                                             />
                                             <div>
-                                                <div className="font-semibold text-slate-800">{strat.name}</div>
+                                                <div className="font-semibold text-slate-800">{strat.label}</div>
                                                 <div className="text-xs text-slate-500">{strat.description}</div>
                                             </div>
                                         </label>
