@@ -226,11 +226,7 @@ export default function Step1Page({ params }: Step1PageProps) {
                 />
 
                 <div className="mb-6">
-                    <h1 className="text-3xl font-black text-slate-900 tracking-tight flex items-center gap-3">
-                        <ListTree className="text-blue-500" />
-                        ISDC Scope Selection
-                    </h1>
-                    <p className="text-slate-500 mt-2">
+                    <p className="text-slate-500">
                         Select which ISDC (International Structure for Decommissioning Costing) items
                         are relevant for your project. This defines the scope of cost estimation.
                     </p>
