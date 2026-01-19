@@ -27,7 +27,8 @@ import {
     Clock,
     Shield,
     Brain,
-    Bot
+    Bot,
+    Wand2
 } from 'lucide-react'
 
 // Navigation Interface
@@ -36,11 +37,13 @@ interface NavItem {
     href: string
     icon: React.ElementType
     category: 'Project' | 'Estimation' | 'System' | 'Reports' | 'Intelligence'
+    highlight?: boolean
 }
 
 const navItems: NavItem[] = [
     // Intelligence (New Category for high-level overview)
     { name: 'Control Room', href: '/dashboard', icon: Brain, category: 'Intelligence' },
+    { name: 'Cost Wizard', href: '/dashboard/wizard', icon: Wand2, category: 'Intelligence', highlight: true },
     { name: 'AI Chat', href: '/dashboard/intelligence', icon: Bot, category: 'Intelligence' },
 
     // Project

@@ -1,0 +1,194 @@
+================================================================================
+                    PANDUAN PENGGUNA CERREX v1.0 Beta
+           Cost Estimation for Reactor Decommissioning
+================================================================================
+
+Dibuat oleh: Afif - ISDC Project
+Tahun: 2026
+
+================================================================================
+BAGIAN 1: MEMULAI APLIKASI
+================================================================================
+
+1. AKSES WEBSITE
+   - Buka URL aplikasi CERREX yang sudah di-deploy
+   - Halaman pertama adalah Landing Page dengan tombol "Get Started"
+   
+2. LOGIN (GATE)
+   - Klik "Get Started" untuk masuk ke halaman Gate
+   - Masukkan Passcode: nuclear2024
+   - Klik tombol untuk masuk ke Dashboard
+
+3. TAMPILAN DASHBOARD
+   - Setelah login, Anda akan melihat Dashboard utama
+   - Di kiri ada SIDEBAR dengan menu navigasi
+   - Di atas ada HEADER dengan Project Selector
+
+================================================================================
+BAGIAN 2: MANAJEMEN PROJECT (WORKSPACE)
+================================================================================
+
+Lokasi: Tombol Project Selector di pojok kiri atas header (warna ungu/indigo)
+
+A. MEMILIH PROJECT
+   1. Klik tombol Project Selector (menampilkan nama project atau "Select Project")
+   2. Dropdown akan muncul menampilkan daftar semua project
+   3. Klik nama project yang ingin diaktifkan
+   4. Project yang aktif ditandai dengan centang (checkmark)
+   5. Dropdown akan tertutup otomatis
+
+B. MEMBUAT PROJECT BARU
+   1. Klik tombol Project Selector
+   2. Di bagian bawah dropdown, klik "Create New Project"
+   3. Form input akan muncul menggantikan dropdown
+   4. Ketik nama project baru
+   5. Tekan Enter atau klik tombol + (plus) untuk membuat
+   6. Tekan Escape atau klik X untuk membatalkan
+
+C. MENGHAPUS PROJECT
+   1. Klik tombol Project Selector
+   2. Di bagian bawah dropdown, klik "Delete [nama project]"
+   3. Tombol ini hanya muncul jika ada project yang sedang aktif
+   4. Konfirmasi penghapusan
+   
+   PERINGATAN: Menghapus project akan menghapus SEMUA data dalam project tersebut!
+
+================================================================================
+BAGIAN 3: NAVIGASI SIDEBAR
+================================================================================
+
+Menu dikelompokkan dalam kategori:
+
+--- CORE ---
+1. Dashboard      : Halaman utama dengan overview dan statistik ringkas
+
+--- ESTIMATION ---
+2. Asset Inventory  : Database inventaris aset fasilitas nuklir (INV)
+3. Infrastructure   : Data gedung dan bangunan (BLD)  
+4. ISDC Engine      : Mesin kalkulasi struktur biaya ISDC
+5. Sensitivity      : Analisis sensitivitas (INV-SA)
+
+--- REPORTS ---
+6. Report Tier 1    : Laporan ringkasan level 1 (ISDC-L1)
+7. Report Tier 2    : Laporan detail level 2 (ISDC-L2)
+8. Report Tier 3    : Laporan paling detail level 3 (ISDC-L3)
+
+--- SYSTEM ---
+9.  Parameters      : Pengaturan parameter umum (GENERAL)
+10. Unit Factors    : Faktor unit dan konversi (UF)
+11. Nuclide Library : Database radionuklida (RND)
+12. Master Data     : Data master seperti materials, currencies (LISTS)
+
+================================================================================
+BAGIAN 4: CARA MENGGUNAKAN MODUL
+================================================================================
+
+A. ASSET INVENTORY (Inventaris Aset)
+   Lokasi: Sidebar > Estimation > Asset Inventory
+   
+   Fungsi: Mengelola database inventaris fasilitas untuk estimasi biaya D&D
+   
+   Fitur:
+   - Tab "Inventory" : Daftar semua item inventaris
+   - Tab "D&D Categories" : 51 kategori D&D (INV1-INV51)
+   - Tab "Waste Mgmt" : Kategori limbah radioaktif
+   
+   Menambah Item:
+   1. Klik tombol "+ Add Inventory" di kanan atas
+   2. Form akan muncul dengan field:
+      - D&D Primary: Kategori utama item
+      - Building Code: Kode gedung lokasi
+      - Floor: Lantai
+      - Room No: Nomor ruangan
+      - Inventory Type: Jenis inventaris
+      - Item Description: Deskripsi item
+      - dll
+   3. Isi semua field yang diperlukan
+   4. Klik "Commit to Database" untuk menyimpan
+   5. Klik "Discard Changes" untuk membatalkan
+   
+   Mengedit Item:
+   1. Di tabel, arahkan mouse ke baris item
+   2. Klik ikon pensil (Edit) yang muncul
+   3. Form akan terbuka dengan data yang sudah terisi
+   4. Ubah data yang diperlukan
+   5. Klik "Update Allocation" untuk menyimpan
+
+   Menghapus Item:
+   1. Di tabel, arahkan mouse ke baris item  
+   2. Klik ikon tempat sampah (Delete) yang muncul
+   3. Konfirmasi penghapusan
+
+B. INFRASTRUCTURE (Gedung)
+   Lokasi: Sidebar > Estimation > Infrastructure
+   
+   Fungsi: Mengelola data gedung dan bangunan fasilitas
+   
+   Field utama:
+   - Building Code: Kode unik gedung (contoh: RB, TB, AB)
+   - Building Name: Nama lengkap gedung
+   - Description: Deskripsi
+
+C. PARAMETERS (Pengaturan Umum)
+   Lokasi: Sidebar > System > Parameters
+   
+   Fungsi: Mengatur parameter umum project seperti:
+   - Mata uang referensi
+   - Exchange rate
+   - Tanggal referensi
+   - Faktor eskalasi
+
+D. MASTER DATA
+   Lokasi: Sidebar > System > Master Data
+   
+   Fungsi: Mengelola data master yang digunakan di seluruh sistem:
+   - Materials: Daftar material
+   - ISDC Components: Komponen struktur biaya ISDC
+   - Currencies: Mata uang
+   - Unit Costs: Biaya satuan
+
+================================================================================
+BAGIAN 5: TIPS PENGGUNAAN
+================================================================================
+
+1. SELALU PILIH PROJECT DULU
+   Sebelum input data apapun, pastikan sudah memilih project yang benar
+   di Project Selector (header kiri atas)
+
+2. PERHATIKAN KODE YANG KONSISTEN
+   Gunakan kode yang sama untuk Building, Floor, Room di semua modul
+
+3. DATA OTOMATIS TERSIMPAN
+   Setiap klik "Save" atau "Commit", data langsung tersimpan ke database
+
+4. REFRESH JIKA PERLU
+   Jika data tidak muncul, refresh halaman browser (F5)
+
+================================================================================
+BAGIAN 6: INFORMASI TEKNIS
+================================================================================
+
+URL APLIKASI  : [sesuai deployment Vercel Anda]
+PASSCODE      : nuclear2024
+DATABASE      : Supabase (cloud)
+TEKNOLOGI     : Next.js 16, React, TypeScript
+
+================================================================================
+BAGIAN 7: TROUBLESHOOTING
+================================================================================
+
+MASALAH: Tidak bisa login
+SOLUSI : Pastikan passcode benar: nuclear2024
+
+MASALAH: Data tidak muncul
+SOLUSI : 
+  1. Pastikan sudah memilih project
+  2. Refresh halaman (F5)
+  3. Cek koneksi internet
+
+MASALAH: Tombol tidak berfungsi
+SOLUSI : Refresh halaman atau clear cache browser
+
+================================================================================
+                         AKHIR PANDUAN
+================================================================================
